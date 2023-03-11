@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Payment Example</title>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body>
+    <h1>Payment Example</h1>
+    <div id="payment-form">
+      <input id="card-holder-name" type="text" placeholder="Cardholder Name">
+      <div id="card-element"></div>
+      <button id="submit-button">Submit Payment</button>
+    </div>
+    <div id="payment-result"></div>
+    
+   
+       <!-- Add this script to the head of your HTML document -->
+<script src="https://js.stripe.com/v3/"></script>
+
+<!-- Use this script in your HTML document or a separate JavaScript file -->
+<script>
+  // Initialize Stripe
+  var stripe = Stripe('your_stripe_api_key');
+
+  // Create a Stripe Elements instance
+  var elements = stripe.elements();
+
+  // Mount the card element to the DOM
+  var cardElement = elements.create('card');
+  cardElement.mount('#card-element');
+
+  // Get references to the card holder name and submit button elements
+  var cardHolderName = document.getElementById('card-holder-name');
+  var submitButton = document.getElementById('submit-button');
+
+  // Handle the submission of the payment form
+  submitButton.addEventListener('click', function(event) {
+    event.preventDefault();
+
+    // Disable the submit button to prevent multiple submissions
+    submitButton.disabled = true;
+
+    // Collect the billing details from the form
+    var billingDetails = {
+      name: cardHolderName.value
+    };
+
+    // Create a PaymentMethod object with the collected billing details and card element
+    stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: billingDetails
+    }).then(function(result) {
+      // Handle any errors returned by Stripe
+      if (result.error) {
+        // Display the error message to the user
+        document.getElementById('payment-result').innerHTML = result.error.message;
+
+        // Re-enable the submit button
+        submitButton.disabled = false;
+      } else {
+        // Send the PaymentMethod ID to the server
+        fetch('/pay', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ payment_method_id: result.paymentMethod.id })
+        }).then(function(response) {
+          // Handle the server response
+          if (response.ok) {
+            // Display a success message to the user
+            document.getElementById('payment-result').innerHTML = 'Payment successful!';
+          } else {
+            // Display an error message to the user
+            document.getElementById('payment-result').innerHTML = 'An error occurred while processing the payment. Please try again later.';
+          }
+
+          // Re-enable the submit button
+          submitButton.disabled = false;
+        });
+      }
+    });
+  });
+</script>
+
+
+
+      
+  </body>
+</html>
